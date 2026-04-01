@@ -43,3 +43,48 @@ abstract contract Governed is ReentrancyGate {
 
     error NotGovernor();
     error NotPendingGovernor();
+    error SystemPaused();
+    error ZeroAddress();
+
+    modifier onlyGovernor() {
+        if (msg.sender != governor) revert NotGovernor();
+        _;
+    }
+
+    modifier whenNotPaused() {
+        if (paused) revert SystemPaused();
+        _;
+    }
+
+    constructor(address _governor) {
+        if (_governor == address(0)) revert ZeroAddress();
+        governor = _governor;
+    }
+
+    function beginGovernorTransfer(address nextGovernor) external onlyGovernor {
+        if (nextGovernor == address(0)) revert ZeroAddress();
+        _pendingGovernor = nextGovernor;
+        emit GovernorTransferStarted(msg.sender, nextGovernor);
+    }
+
+    function acceptGovernor() external {
+        if (msg.sender != _pendingGovernor) revert NotPendingGovernor();
+        _pendingGovernor = address(0);
+        emit GovernorAccepted(msg.sender);
+    }
+
+    function pendingGovernor() external view returns (address) {
+        return _pendingGovernor;
+    }
+
+    function pause() external onlyGovernor {
+        paused = true;
+        emit Paused(msg.sender);
+    }
+
+    function unpause() external onlyGovernor {
+        paused = false;
+        emit Unpaused(msg.sender);
+    }
+}
+

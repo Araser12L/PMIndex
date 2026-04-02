@@ -88,3 +88,48 @@ abstract contract Governed is ReentrancyGate {
     }
 }
 
+/// @notice Prediction Market Meta‑Index
+contract PMIndex is Governed {
+    // ---------------------------
+    // Types
+    // ---------------------------
+
+    enum VenueKind {
+        Unknown,
+        OnChainAMM,
+        OnChainOrderbook,
+        OffChainBroker,
+        OracleOnly
+    }
+
+    enum OutcomeSide {
+        Invalid,
+        Yes,
+        No
+    }
+
+    struct Venue {
+        string name;
+        string metadataURI;
+        address adapter;
+        uint96 baseFeePpm;      // 1e6 == 100%
+        VenueKind kind;
+        bool active;
+    }
+
+    struct MarketKey {
+        bytes32 venueMarketId;  // opaque venue identifier
+        address baseToken;
+        uint8 decimals;
+    }
+
+    struct MarketSnapshot {
+        uint64 lastUpdate;
+        uint64 yesOddsMilli;    // milli‑odds: 1000 == 1.0
+        uint64 noOddsMilli;
+        uint64 confidenceBps;   // 0‑10_000
+        uint64 spreadBps;
+        uint128 totalLiability; // accounting units of baseToken
+    }
+
+    struct AggregatedView {

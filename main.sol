@@ -133,3 +133,48 @@ contract PMIndex is Governed {
     }
 
     struct AggregatedView {
+        uint64 compositeYesMilli;
+        uint64 compositeNoMilli;
+        uint64 compositeConfidenceBps;
+        uint64 effectiveSpreadBps;
+        uint128 weightedLiquidity;
+        uint32 contributingFeeds;
+    }
+
+    struct ArbRoute {
+        uint256 routeId;
+        uint16 fromVenueId;
+        uint16 toVenueId;
+        bytes32 marketId;
+        int64 edgeMilli;
+        uint64 discoveredAt;
+        uint64 expiresAt;
+        bool live;
+    }
+
+    struct SyntheticPosition {
+        uint128 notional;
+        uint128 maxLoss;
+        OutcomeSide side;
+        uint16 venueId;
+        bytes32 marketId;
+        address owner;
+        uint64 openedAt;
+        bool closed;
+    }
+
+    // ---------------------------
+    // Storage – static identifiers
+    // ---------------------------
+
+    string public indexName;
+    string public indexSymbol;
+
+    // entropy / risk domains (fresh, contract‑local constants)
+    bytes32 public immutable entropySalt;
+    uint96 public immutable baseFeeFloorPpm;
+
+    // sentinel addresses (random‑looking, contract‑local only)
+    address private constant SENTINEL_VALIDATOR = 0xF9bA7a60f2c9A99a7d3f8971A102bF3b7D4c0C91;
+    address private constant SENTINEL_ROUTER    = 0x3E4bC12aA9577E0eA0732dB5cA343fA98C52A4EE;
+

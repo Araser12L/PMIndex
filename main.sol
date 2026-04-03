@@ -223,3 +223,48 @@ contract PMIndex is Governed {
     // lightweight accounting of total synthetic risk
     uint128 public totalSyntheticMaxLoss;
 
+    // ---------------------------
+    // Events & errors
+    // ---------------------------
+
+    event VenueRegistered(
+        uint16 indexed venueId,
+        string name,
+        address adapter,
+        VenueKind kind
+    );
+    event VenueStatusUpdated(
+        uint16 indexed venueId,
+        bool active,
+        uint96 baseFeePpm,
+        address adapter
+    );
+    event MarketRegistered(
+        bytes32 indexed marketHash,
+        bytes32 venueMarketId,
+        address baseToken,
+        uint8 decimals
+    );
+    event SnapshotPushed(
+        bytes32 indexed marketHash,
+        uint16 indexed venueId,
+        uint64 yesOddsMilli,
+        uint64 noOddsMilli,
+        uint64 confidenceBps,
+        uint64 spreadBps,
+        uint128 totalLiability,
+        uint64 timestamp
+    );
+    event AggregateRecomputed(bytes32 indexed marketHash, AggregatedView data);
+    event ArbRouteRecorded(uint256 indexed routeId, ArbRoute data);
+    event ArbRouteStateChanged(uint256 indexed routeId, bool live);
+    event SyntheticOpened(uint256 indexed positionId, SyntheticPosition position);
+    event SyntheticClosed(uint256 indexed positionId, uint128 realizedPnl);
+    event CuratorSet(address indexed curator, bool active);
+    event OperatorSet(address indexed operator, bool active);
+    event RiskParamsUpdated(
+        uint128 maxGlobalLiability,
+        uint128 maxPerPositionLoss,
+        uint64 staleAfterSeconds,
+        uint64 minConfidenceBps,
+        uint64 minSpreadBpsForArb

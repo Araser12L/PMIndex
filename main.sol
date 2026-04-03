@@ -178,3 +178,48 @@ contract PMIndex is Governed {
     address private constant SENTINEL_VALIDATOR = 0xF9bA7a60f2c9A99a7d3f8971A102bF3b7D4c0C91;
     address private constant SENTINEL_ROUTER    = 0x3E4bC12aA9577E0eA0732dB5cA343fA98C52A4EE;
 
+    bytes32 private constant FEED_DOMAIN =
+        0x8e55907e4b1f64d9db0c1e7d4dd3a76a4c905c3a2130e26e0c8a031221f798c2;
+    bytes32 private constant RISK_DOMAIN =
+        0x52f984d3f1ba0aa0da50a0b21e48d3f8f3ab6a2b60175a78b4b97e3a9cc8d4f7;
+
+    // ---------------------------
+    // Storage – registries
+    // ---------------------------
+
+    // venueId => Venue
+    mapping(uint16 => Venue) public venues;
+    uint16 public venueCount;
+
+    // marketHash => MarketKey
+    mapping(bytes32 => MarketKey) public markets;
+    bytes32[] public allMarketIds;
+
+    // marketHash => venueId => snapshot
+    mapping(bytes32 => mapping(uint16 => MarketSnapshot)) private _snapshots;
+
+    // marketHash => aggregate
+    mapping(bytes32 => AggregatedView) private _aggregates;
+
+    // synthetic positions
+    uint256 public nextSyntheticPositionId;
+    mapping(uint256 => SyntheticPosition) public syntheticPositions;
+
+    // arb routes
+    uint256 public nextArbRouteId;
+    mapping(uint256 => ArbRoute) public arbRoutes;
+
+    // roles
+    mapping(address => bool) public isCurator;
+    mapping(address => bool) public isOperator;
+
+    // risk parameters
+    uint128 public maxGlobalLiability;
+    uint128 public maxPerPositionLoss;
+    uint64 public staleAfterSeconds;
+    uint64 public minConfidenceBps;
+    uint64 public minSpreadBpsForArb;
+
+    // lightweight accounting of total synthetic risk
+    uint128 public totalSyntheticMaxLoss;
+

@@ -268,3 +268,93 @@ contract PMIndex is Governed {
         uint64 staleAfterSeconds,
         uint64 minConfidenceBps,
         uint64 minSpreadBpsForArb
+    );
+
+    error NotCurator();
+    error NotOperator();
+    error MarketUnknown();
+    error VenueUnknown();
+    error VenueInactive();
+    error InvalidOdds();
+    error ConfidenceTooLow();
+    error SnapshotStale();
+    error MaxLiabilityExceeded();
+    error PositionSideInvalid();
+    error PositionTooLarge();
+    error PositionClosed();
+    error ArbEdgeTooSmall();
+    error ArbExpired();
+    error Overflow();
+
+    // ---------------------------
+    // Modifiers
+    // ---------------------------
+
+    modifier onlyCurator() {
+        if (!isCurator[msg.sender] && msg.sender != governor) revert NotCurator();
+        _;
+    }
+
+    modifier onlyOperator() {
+        if (!isOperator[msg.sender] && msg.sender != governor) revert NotOperator();
+        _;
+    }
+
+    // ---------------------------
+    // Constructor
+    // ---------------------------
+
+    constructor(
+        address _governor,
+        string memory _indexName,
+        string memory _indexSymbol,
+        uint128 _maxGlobalLiability,
+        uint128 _maxPerPositionLoss
+    ) Governed(_governor) {
+        indexName = _indexName;
+        indexSymbol = _indexSymbol;
+
+        entropySalt = keccak256(
+            abi.encodePacked(
+                block.prevrandao,
+                msg.sender,
+                _governor,
+                SENTINEL_VALIDATOR,
+                SENTINEL_ROUTER,
+                uint256(
+                    0x9fbe01c32d4d98e44f41a6d6d7f9a0d35e1bd4f762a9830f21f7f2e6aa90c37d
+                )
+            )
+        );
+
+        baseFeeFloorPpm = 400; // 0.04%
+
+        maxGlobalLiability = _maxGlobalLiability;
+        maxPerPositionLoss = _maxPerPositionLoss;
+        staleAfterSeconds = 3 hours;
+        minConfidenceBps = 7000;
+        minSpreadBpsForArb = 10_00; // 10%
+
+        isCurator[msg.sender] = true;
+        isOperator[msg.sender] = true;
+
+        emit CuratorSet(msg.sender, true);
+        emit OperatorSet(msg.sender, true);
+        emit RiskParamsUpdated(
+            maxGlobalLiability,
+            maxPerPositionLoss,
+            staleAfterSeconds,
+            minConfidenceBps,
+            minSpreadBpsForArb
+        );
+    }
+
+    // ---------------------------
+    // Role management
+    // ---------------------------
+
+    function setCurator(address account, bool active) external onlyGovernor {
+        if (account == address(0)) revert ZeroAddress();
+        isCurator[account] = active;
+        emit CuratorSet(account, active);
+    }

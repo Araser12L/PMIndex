@@ -403,3 +403,48 @@ contract PMIndex is Governed {
         if (baseFeePpm < baseFeeFloorPpm) {
             baseFeePpm = baseFeeFloorPpm;
         }
+
+        venueId = ++venueCount;
+        venues[venueId] = Venue({
+            name: name,
+            metadataURI: metadataURI,
+            adapter: adapter,
+            baseFeePpm: baseFeePpm,
+            kind: kind,
+            active: true
+        });
+
+        emit VenueRegistered(venueId, name, adapter, kind);
+    }
+
+    function setVenueStatus(
+        uint16 venueId,
+        bool active,
+        uint96 baseFeePpm,
+        address newAdapter
+    ) external onlyCurator whenNotPaused {
+        Venue storage v = venues[venueId];
+        if (v.adapter == address(0)) revert VenueUnknown();
+
+        if (baseFeePpm < baseFeeFloorPpm) {
+            baseFeePpm = baseFeeFloorPpm;
+        }
+
+        v.active = active;
+        v.baseFeePpm = baseFeePpm;
+
+        if (newAdapter != address(0)) {
+            v.adapter = newAdapter;
+        }
+
+        emit VenueStatusUpdated(venueId, active, baseFeePpm, v.adapter);
+    }
+
+    // ---------------------------
+    // Market registry
+    // ---------------------------
+
+    function computeMarketHash(
+        bytes32 venueMarketId,
+        address baseToken
+    ) public pure returns (bytes32) {

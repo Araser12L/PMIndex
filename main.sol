@@ -358,3 +358,48 @@ contract PMIndex is Governed {
         isCurator[account] = active;
         emit CuratorSet(account, active);
     }
+
+    function setOperator(address account, bool active) external onlyGovernor {
+        if (account == address(0)) revert ZeroAddress();
+        isOperator[account] = active;
+        emit OperatorSet(account, active);
+    }
+
+    function updateRiskParams(
+        uint128 _maxGlobalLiability,
+        uint128 _maxPerPositionLoss,
+        uint64 _staleAfterSeconds,
+        uint64 _minConfidenceBps,
+        uint64 _minSpreadBpsForArb
+    ) external onlyGovernor {
+        maxGlobalLiability = _maxGlobalLiability;
+        maxPerPositionLoss = _maxPerPositionLoss;
+        staleAfterSeconds = _staleAfterSeconds;
+        minConfidenceBps = _minConfidenceBps;
+        minSpreadBpsForArb = _minSpreadBpsForArb;
+
+        emit RiskParamsUpdated(
+            _maxGlobalLiability,
+            _maxPerPositionLoss,
+            _staleAfterSeconds,
+            _minConfidenceBps,
+            _minSpreadBpsForArb
+        );
+    }
+
+    // ---------------------------
+    // Venue registry
+    // ---------------------------
+
+    function registerVenue(
+        string calldata name,
+        string calldata metadataURI,
+        address adapter,
+        uint96 baseFeePpm,
+        VenueKind kind
+    ) external onlyCurator whenNotPaused returns (uint16 venueId) {
+        if (adapter == address(0)) revert ZeroAddress();
+
+        if (baseFeePpm < baseFeeFloorPpm) {
+            baseFeePpm = baseFeeFloorPpm;
+        }

@@ -493,3 +493,48 @@ contract PMIndex is Governed {
     ) external onlyCurator whenNotPaused {
         if (markets[marketHash].baseToken == address(0)) revert MarketUnknown();
         Venue memory v = venues[venueId];
+        if (v.adapter == address(0)) revert VenueUnknown();
+        if (!v.active) revert VenueInactive();
+
+        if (yesOddsMilli + noOddsMilli == 0 || yesOddsMilli > 3000 || noOddsMilli > 3000) {
+            revert InvalidOdds();
+        }
+        if (confidenceBps < minConfidenceBps) revert ConfidenceTooLow();
+
+        MarketSnapshot storage s = _snapshots[marketHash][venueId];
+        s.lastUpdate = uint64(block.timestamp);
+        s.yesOddsMilli = yesOddsMilli;
+        s.noOddsMilli = noOddsMilli;
+        s.confidenceBps = confidenceBps;
+        s.spreadBps = spreadBps;
+        s.totalLiability = totalLiability;
+
+        emit SnapshotPushed(
+            marketHash,
+            venueId,
+            yesOddsMilli,
+            noOddsMilli,
+            confidenceBps,
+            spreadBps,
+            totalLiability,
+            uint64(block.timestamp)
+        );
+
+        _recomputeAggregate(marketHash);
+    }
+
+    function _recomputeAggregate(bytes32 marketHash) internal {
+        MarketKey memory key = markets[marketHash];
+        if (key.baseToken == address(0)) revert MarketUnknown();
+
+        uint256 yesAcc;
+        uint256 noAcc;
+        uint256 confAcc;
+        uint256 spreadAcc;
+        uint256 liqAcc;
+        uint32 count;
+
+        uint16 localVenueCount = venueCount;
+        for (uint16 i = 1; i <= localVenueCount; i++) {
+            uint16 venueId = _scrambleVenueId(i, localVenueCount);
+            MarketSnapshot memory s = _snapshots[marketHash][venueId];

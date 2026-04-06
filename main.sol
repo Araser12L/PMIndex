@@ -448,3 +448,48 @@ contract PMIndex is Governed {
         bytes32 venueMarketId,
         address baseToken
     ) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(FEED_DOMAIN, venueMarketId, baseToken));
+    }
+
+    function registerMarket(
+        bytes32 venueMarketId,
+        address baseToken,
+        uint8 decimals
+    ) external onlyCurator whenNotPaused returns (bytes32 marketHash) {
+        if (baseToken == address(0)) revert ZeroAddress();
+
+        marketHash = computeMarketHash(venueMarketId, baseToken);
+        if (markets[marketHash].baseToken != address(0)) {
+            return marketHash;
+        }
+
+        markets[marketHash] = MarketKey({
+            venueMarketId: venueMarketId,
+            baseToken: baseToken,
+            decimals: decimals
+        });
+
+        allMarketIds.push(marketHash);
+
+        emit MarketRegistered(marketHash, venueMarketId, baseToken, decimals);
+    }
+
+    function allMarketsLength() external view returns (uint256) {
+        return allMarketIds.length;
+    }
+
+    // ---------------------------
+    // Snapshots & aggregation
+    // ---------------------------
+
+    function pushSnapshot(
+        bytes32 marketHash,
+        uint16 venueId,
+        uint64 yesOddsMilli,
+        uint64 noOddsMilli,
+        uint64 confidenceBps,
+        uint64 spreadBps,
+        uint128 totalLiability
+    ) external onlyCurator whenNotPaused {
+        if (markets[marketHash].baseToken == address(0)) revert MarketUnknown();
+        Venue memory v = venues[venueId];
